@@ -1,0 +1,82 @@
+<%-- Estructura del panel. Requiere: String titulo, String seccion --%>
+<%
+    String admUsuario = (String) session.getAttribute("adminUsuario");
+
+    String[][] admGrupos = {
+        {"Catálogo"},
+        {"productos", "/jsp-Productos/producto.jsp",
+            "inventory_2", "Productos"},
+        {"solicitudes", "/jsp-Admin/catalogoSolicitudes.jsp",
+            "receipt_long", "Catálogo de solicitudes"},
+
+        {"Atención al cliente"},
+        {"clientes", "/jsp-Admin/solicitudesClientes.jsp", "mail", "Solicitudes del cliente"},
+
+        {"Gestión del servicio"},
+        {"cambios", "/jsp-Admin/gestionCambios.jsp", "settings", "Gestión de cambios"},
+        {"pipeline", "/jsp-Admin/pipelineCI.jsp", "play_arrow", "Pipeline de CI"},
+        {"capacidad", "/jsp-Admin/planCapacidad.jsp", "monitoring", "Plan de capacidad"},
+
+        {"Compras"},
+        {"proveedores", "/jsp-Proveedores/Proveedores.jsp",
+            "local_shipping", "Proveedores"},
+        {"compras", "/jsp-Proveedores/comprasProveedor.jsp",
+            "add_business", "Registrar compra"},
+
+        {"Usuarios"},
+        {"usuarios", "/jsp-Admin/usuariosAdmin.jsp",
+            "person", "Creación de usuarios"},
+
+        {"Publicidad"},
+        {"carrusel", "/jsp-Admin/carrusel.jsp", "image", "Carrusel de publicidad"},
+
+        {"Reportes"},
+        {"ventas", "/jsp-Admin/ventasAdmin.jsp",
+            "point_of_sale", "Ventas"},
+        {"actividad", "/jsp-Admin/historialAdmin.jsp",
+            "history", "Actividad"}
+    };
+%>
+
+<body class="min-h-dvh">
+    <a href="#contenido" class="enlace-salto">
+        Saltar al contenido
+    </a>
+
+    <div class="lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
+
+        <aside
+            class="vt-lateral sticky top-0 hidden h-dvh flex-col border-r border-stone-200 bg-white lg:flex"
+            aria-label="Panel de administración">
+
+            <%@ include file="/WEB-INF/jspf/admin-nav.jspf" %>
+
+        </aside>
+
+        <div class="min-w-0">
+
+            <header
+                class="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-stone-200 bg-white/95 px-2 backdrop-blur-sm lg:hidden">
+
+                <button
+                    type="button"
+                    class="btn btn-fantasma btn-solo-icono"
+                    data-abrir-cajon="cajon-admin"
+                    aria-controls="cajon-admin"
+                    aria-expanded="false"
+                    aria-label="Abrir menú">
+
+                    <ui:icono n="menu" clase="size-6"/>
+
+                </button>
+
+                <span class="truncate text-sm font-semibold text-stone-900">
+                    <%= util.Html.esc(titulo) %>
+                </span>
+
+            </header>
+
+            <main
+                id="contenido"
+                class="contenedor max-w-6xl py-6 motion-safe:animate-aparecer lg:py-10"
+                data-zona-resultados>

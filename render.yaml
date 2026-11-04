@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: market
+    runtime: docker
+    plan: free
+    region: virginia
+    healthCheckPath: /
+    envVars:
+      # postgresql://postgres.<ref>:<clave>@aws-0-<region>.pooler.supabase.com:5432/postgres
+      - key: DATABASE_URL
+        sync: false

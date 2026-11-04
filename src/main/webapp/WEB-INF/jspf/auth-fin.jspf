@@ -1,0 +1,8 @@
+<%-- Cierra la tarjeta de acceso. Requiere: String pieAuth (HTML con enlaces secundarios) --%>
+            </div>
+            <div class="mt-6 space-y-2 text-center text-sm text-stone-600"><%= pieAuth %></div>
+        </div>
+    </main>
+</div>
+<%@ include file="/WEB-INF/jspf/fin.jspf" %>
+</body>

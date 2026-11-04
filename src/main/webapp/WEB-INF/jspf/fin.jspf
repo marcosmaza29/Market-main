@@ -1,0 +1,35 @@
+<%-- Notificaciones, diálogo de confirmación y plantillas usadas por app.js --%>
+<div class="barra-progreso" aria-hidden="true"></div>
+<section id="toasts" class="toasts" aria-label="Notificaciones" aria-live="polite">
+    <% for (util.Flash.Mensaje fm : util.Flash.consumir(request.getSession(false))) {
+           String fmIcono = "error".equals(fm.tipo) ? "error" : "exito".equals(fm.tipo) ? "check_circle" : "info"; %>
+    <div class="toast toast-<%= fm.tipo %>" role="<%= "error".equals(fm.tipo) ? "alert" : "status" %>">
+        <ui:icono n="<%= fmIcono %>" clase="toast-icono"/>
+        <p class="toast-texto flex-1 leading-snug"><%= util.Html.esc(fm.texto) %></p>
+        <% if (fm.accionUrl != null) { %>
+        <form method="post" action="<%= util.Html.esc(fm.accionUrl) %>" class="contents">
+            <button type="submit" class="toast-accion" data-sin-carga><%= util.Html.esc(fm.accionTexto) %></button>
+        </form>
+        <% } %>
+        <button type="button" class="toast-cerrar" aria-label="Cerrar notificación"><ui:icono n="close" clase="size-4"/></button>
+        <% if (!"error".equals(fm.tipo)) { %><span class="toast-tiempo" aria-hidden="true"></span><% } %>
+    </div>
+    <% } %>
+</section>
+
+<dialog id="dlg-confirmar" class="dialogo" aria-labelledby="dlg-confirmar-titulo" aria-describedby="dlg-confirmar-texto">
+    <form method="dialog" class="p-6">
+        <h2 id="dlg-confirmar-titulo" class="text-lg font-semibold text-stone-900" data-dlg-titulo>¿Confirmas esta acción?</h2>
+        <p id="dlg-confirmar-texto" class="mt-2 text-sm leading-relaxed text-stone-600" data-dlg-texto></p>
+        <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button value="cancelar" class="btn btn-secundario" data-dlg-cancelar>Cancelar</button>
+            <button value="ok" class="btn btn-primario" data-dlg-ok><span data-dlg-ok-texto>Confirmar</span></button>
+        </div>
+    </form>
+</dialog>
+
+<template id="tpl-toast-exito"><div class="toast toast-exito" role="status"><ui:icono n="check_circle" clase="toast-icono"/><p class="toast-texto flex-1 leading-snug"></p><button type="button" class="toast-cerrar" aria-label="Cerrar notificación"><ui:icono n="close" clase="size-4"/></button><span class="toast-tiempo" aria-hidden="true"></span></div></template>
+<template id="tpl-toast-error"><div class="toast toast-error" role="alert"><ui:icono n="error" clase="toast-icono"/><p class="toast-texto flex-1 leading-snug"></p><button type="button" class="toast-cerrar" aria-label="Cerrar notificación"><ui:icono n="close" clase="size-4"/></button></div></template>
+<template id="tpl-toast-info"><div class="toast toast-info" role="status"><ui:icono n="info" clase="toast-icono"/><p class="toast-texto flex-1 leading-snug"></p><button type="button" class="toast-cerrar" aria-label="Cerrar notificación"><ui:icono n="close" clase="size-4"/></button><span class="toast-tiempo" aria-hidden="true"></span></div></template>
+<template id="tpl-error-campo"><p class="error-campo"><ui:icono n="error"/><span class="error-campo-texto"></span></p></template>
+<template id="tpl-sin-imagen"><div class="flex flex-col items-center gap-1 text-stone-400"><ui:icono n="image" clase="size-10"/><span class="text-xs">Imagen no disponible</span></div></template>

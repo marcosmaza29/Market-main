@@ -1,0 +1,42 @@
+# Uso:  docker compose up --build   →  http://localhost:8080/
+# La base de datos es Supabase (no hay Postgres local). La URL va en el archivo .env
+services:
+  web:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    profiles: ["monitoring"]
+    environment:
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
+    volumes:
+      - ./monitoring/prometheus.yml.template:/etc/prometheus/prometheus.yml.template:ro
+      - prometheus_data:/prometheus
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - 'sed "s/__METRICS_TOKEN__/$${METRICS_TOKEN}/g" /etc/prometheus/prometheus.yml.template > /tmp/prometheus.yml && /bin/prometheus --config.file=/tmp/prometheus.yml --storage.tsdb.path=/prometheus --web.listen-address=:9090'
+    depends_on: [web]
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    profiles: ["monitoring"]
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on: [prometheus]
+
+volumes:
+  prometheus_data:
+  grafana_data:

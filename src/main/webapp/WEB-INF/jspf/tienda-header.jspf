@@ -1,0 +1,315 @@
+<%-- Cabecera de la tienda. Expone: hdrNombre, hdrCorreo, hdrItems, hdrBuscar --%>
+<%
+    String hdrNombre = (String) session.getAttribute("usuarioNombre");
+    String hdrCorreo = (String) session.getAttribute("correoCliente");
+
+    int hdrItems = 0;
+
+    java.util.List<modelo.CarritoItem> hdrCarrito =
+        (java.util.List<modelo.CarritoItem>) session.getAttribute("carrito");
+
+    if (hdrCarrito != null) {
+        for (modelo.CarritoItem it : hdrCarrito) {
+            hdrItems += it.getCantidad();
+        }
+    }
+
+    String hdrBuscar = request.getParameter("buscar") == null
+        ? ""
+        : request.getParameter("buscar").trim();
+
+    // Mantener la tienda actual en los enlaces y formularios.
+    String hdrTienda = request.getParameter("tienda");
+
+    if (hdrTienda == null || hdrTienda.trim().isEmpty()) {
+        hdrTienda = contextoTienda;
+    } else {
+        hdrTienda = hdrTienda.trim().toLowerCase();
+    }
+
+    // Evitar valores de tienda no reconocidos.
+    if (!java.util.Arrays.asList("market", "juguetes", "cosmeticos").contains(hdrTienda)) {
+        hdrTienda = contextoTienda;
+    }
+
+    String hdrTiendaEnc = java.net.URLEncoder.encode(hdrTienda, "UTF-8");
+
+    String hdrIniciales = "";
+
+    if (hdrNombre != null) {
+        for (String parte : hdrNombre.trim().split("\\s+")) {
+            if (!parte.isEmpty() && hdrIniciales.length() < 2) {
+                hdrIniciales += Character.toUpperCase(parte.charAt(0));
+            }
+        }
+    }
+
+    String hdrVolver = request.getRequestURI().substring(ctx.length())
+        + (request.getQueryString() != null
+            ? "?" + request.getQueryString()
+            : "");
+
+    String hdrVolverEnc = java.net.URLEncoder.encode(hdrVolver, "UTF-8");
+%>
+
+<% String hdrNombreTienda = (String) request.getAttribute("tienda.nombre");
+   String hdrLogoTienda = (String) request.getAttribute("tienda.logo");
+   String hdrFuenteTienda = (String) request.getAttribute("tienda.fuente");
+   String hdrColorPrimario = (String) request.getAttribute("tienda.colorPrimario");
+   String hdrColorSecundario = (String) request.getAttribute("tienda.colorSecundario");
+   String hdrColorFondo = (String) request.getAttribute("tienda.colorFondo");
+   if (hdrFuenteTienda == null) {
+       try (java.sql.Connection hc = util.Conexion.getConnection();
+            java.sql.PreparedStatement hp = hc.prepareStatement("SELECT nombre,logo_url,tipo_fuente,color_primario,color_secundario,color_fondo FROM tiendas WHERE id=?")) {
+           hp.setString(1, hdrTienda);
+           try (java.sql.ResultSet hr = hp.executeQuery()) {
+               if (hr.next()) {
+                   hdrNombreTienda = hr.getString("nombre"); hdrLogoTienda = hr.getString("logo_url");
+                   hdrFuenteTienda = hr.getString("tipo_fuente"); hdrColorPrimario = hr.getString("color_primario");
+                   hdrColorSecundario = hr.getString("color_secundario"); hdrColorFondo = hr.getString("color_fondo");
+               }
+           }
+       } catch (Exception he) { application.log("No se pudo cargar el tema de la tienda " + hdrTienda, he); }
+   } %>
+<% if (hdrFuenteTienda != null && hdrColorPrimario != null && hdrColorSecundario != null && hdrColorFondo != null) { %>
+<style>
+:root{--color-marca-principal:<%=hdrColorPrimario%>;--color-marca-secundario:<%=hdrColorSecundario%>;--color-fondo-tienda:<%=hdrColorFondo%>}
+body{font-family:<%=hdrFuenteTienda%>;background-color:var(--color-fondo-tienda)}
+.btn-primario{background-color:var(--color-marca-principal);border-color:var(--color-marca-principal)}
+.texto-marca{color:var(--color-marca-principal)}
+.fondo-marca{background-color:var(--color-marca-principal)}
+</style>
+<% } %>
+<a href="#contenido" class="enlace-salto">Saltar al contenido</a>
+
+<header class="vt-cabecera sticky top-0 z-30 border-b border-stone-200 bg-white/95 backdrop-blur-sm">
+    <div class="contenedor flex h-16 items-center gap-3 sm:gap-6">
+
+        <%-- Logo: regresa a la tienda actual --%>
+        <a
+            href="<%= ctx %>/jsp-Interfaz/interfaz.jsp?tienda=<%= hdrTiendaEnc %>"
+            class="flex shrink-0 items-center gap-2.5 rounded-lg"
+            aria-label="Ir al inicio de la tienda">
+
+            <span class="grid size-9 place-items-center overflow-hidden rounded-lg bg-marca-700 text-white">
+                <% if (hdrLogoTienda != null && !hdrLogoTienda.trim().isEmpty()) { %>
+                    <img src="<%= util.Html.esc(hdrLogoTienda) %>" alt="" class="size-full object-contain">
+                <% } else { %><ui:icono n="storefront"/><% } %>
+            </span>
+
+            <span class="hidden leading-tight sm:block">
+                <% if (hdrNombreTienda != null) { %>
+                    <span class="block text-[15px] font-semibold text-stone-900"><%= util.Html.esc(hdrNombreTienda) %></span>
+                    <span class="block text-xs text-stone-500">Tienda en línea</span>
+                <% } else { %>
+                <% if ("juguetes".equals(hdrTienda)) { %>
+                    <span class="block text-[15px] font-semibold text-stone-900">Juguetería</span>
+                    <span class="block text-xs text-stone-500">Tienda de juguetes</span>
+                <% } else if ("cosmeticos".equals(hdrTienda)) { %>
+                    <span class="block text-[15px] font-semibold text-stone-900">Belleza y Cosméticos</span>
+                    <span class="block text-xs text-stone-500">Tienda de belleza</span>
+                <% } else { %>
+                    <span class="block text-[15px] font-semibold text-stone-900">Minimarket Anais</span>
+                    <span class="block text-xs text-stone-500">Minimarket y licorería</span>
+                <% } %>
+                <% } %>
+            </span>
+        </a>
+
+        <%-- Buscador de escritorio --%>
+        <form
+            role="search"
+            action="<%= ctx %>/jsp-Interfaz/interfaz.jsp"
+            method="get"
+            class="hidden max-w-xl flex-1 md:block">
+
+            <input type="hidden" name="tienda" value="<%= util.Html.esc(hdrTienda) %>">
+
+            <label for="buscar-escritorio" class="sr-only">Buscar productos</label>
+
+            <div class="entrada-icono">
+                <ui:icono n="search"/>
+
+                <input
+                    id="buscar-escritorio"
+                    type="search"
+                    name="buscar"
+                    value="<%= util.Html.esc(hdrBuscar) %>"
+                    class="entrada peer h-11 rounded-full bg-stone-50 pr-12"
+                    placeholder="Buscar productos"
+                    autocomplete="off"
+                    enterkeyhint="search"
+                    data-atajo-buscar>
+
+                <span
+                    class="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 transition-opacity peer-focus:opacity-0"
+                    aria-hidden="true">
+                    <kbd class="tecla" title="Pulsa / para buscar">/</kbd>
+                </span>
+            </div>
+        </form>
+
+        <nav aria-label="Tu cuenta y carrito" class="ml-auto flex items-center gap-1 sm:gap-2">
+
+            <%-- Solicitudes y sugerencias de clientes --%>
+            <a href="<%= ctx %>/jsp-Interfaz/solicitudes.jsp?tienda=<%= hdrTiendaEnc %>"
+               class="btn btn-fantasma gap-1.5 px-2.5" title="Solicitudes y mejoras">
+                <ui:icono n="mail" clase="size-5"/>
+                <span class="hidden lg:inline">Sugerencias</span>
+            </a>
+
+            <%-- Administración --%>
+            <a
+                href="<%= ctx %>/jsp-Admin/loginAdmin.jsp?tienda=<%= hdrTiendaEnc %>"
+                class="btn btn-fantasma gap-1.5 px-2.5"
+                title="Panel de Administración">
+
+                <ui:icono n="admin_panel_settings" clase="size-5"/>
+                <span class="hidden lg:inline">Admin</span>
+            </a>
+
+            <%-- Carrito --%>
+            <a
+                href="<%= ctx %>/jsp-Interfaz/carrito.jsp?tienda=<%= hdrTiendaEnc %>"
+                class="btn btn-fantasma relative px-2.5"
+                aria-label="Carrito, <%= util.Html.plural(hdrItems, "producto", "productos") %>">
+
+                <ui:icono n="shopping_cart" clase="size-6"/>
+                <span class="hidden lg:inline">Carrito</span>
+
+                <span
+                    class="contador-carrito absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-marca-700 px-1 text-[11px] font-semibold tabular-nums text-white ring-2 ring-white lg:static lg:ring-0"
+                    data-contador-carrito
+                    <%= hdrItems == 0 ? "hidden" : "" %>>
+                    <%= hdrItems %>
+                </span>
+            </a>
+
+            <% if (hdrNombre != null) { %>
+
+                <%-- Menú de usuario autenticado --%>
+                <div class="relative">
+                    <button
+                        type="button"
+                        class="btn btn-fantasma gap-2 px-1.5 sm:pr-2.5"
+                        data-menu
+                        aria-haspopup="menu"
+                        aria-expanded="false"
+                        aria-controls="menu-cuenta">
+
+                        <span
+                            class="grid size-8 place-items-center rounded-full bg-stone-900 text-xs font-semibold text-white"
+                            aria-hidden="true">
+                            <%= util.Html.esc(hdrIniciales) %>
+                        </span>
+
+                        <span class="hidden max-w-32 truncate sm:inline">
+                            <%= util.Html.esc(hdrNombre.split(" ")[0]) %>
+                        </span>
+
+                        <ui:icono n="expand_more" clase="hidden size-4 text-stone-500 sm:inline-block"/>
+                        <span class="sr-only">Menú de tu cuenta</span>
+                    </button>
+
+                    <div
+                        id="menu-cuenta"
+                        class="menu"
+                        role="menu"
+                        aria-label="Tu cuenta">
+
+                        <div class="px-3 py-2">
+                            <p class="truncate text-sm font-semibold text-stone-900">
+                                <%= util.Html.esc(hdrNombre) %>
+                            </p>
+
+                            <p class="truncate text-xs text-stone-500">
+                                <%= util.Html.esc(hdrCorreo == null ? "" : hdrCorreo) %>
+                            </p>
+                        </div>
+
+                        <div class="menu-separador" role="separator"></div>
+
+                        <a
+                            role="menuitem"
+                            class="menu-item"
+                            href="<%= ctx %>/jsp-Interfaz/historial.jsp?tienda=<%= hdrTiendaEnc %>">
+                            <ui:icono n="receipt_long"/>Mis compras
+                        </a>
+
+                        <a role="menuitem" class="menu-item" href="<%= ctx %>/jsp-Interfaz/solicitudes.jsp?tienda=<%= hdrTiendaEnc %>">
+                            <ui:icono n="mail"/>Mis solicitudes
+                        </a>
+
+                        <a
+                            role="menuitem"
+                            class="menu-item"
+                            href="<%= ctx %>/jsp-Usuarios/editarUsuario.jsp">
+                            <ui:icono n="manage_accounts"/>Mi cuenta
+                        </a>
+
+                        <a
+                            role="menuitem"
+                            class="menu-item"
+                            href="<%= ctx %>/jsp-Interfaz/ayuda.jsp?tienda=<%= hdrTiendaEnc %>">
+                            <ui:icono n="help"/>Ayuda
+                        </a>
+
+                        <div class="menu-separador" role="separator"></div>
+
+                        <a
+                            role="menuitem"
+                            class="menu-item"
+                            href="<%= ctx %>/cerrar-sesion">
+                            <ui:icono n="logout"/>Cerrar sesión
+                        </a>
+                    </div>
+                </div>
+
+            <% } else { %>
+
+                <%-- Usuario no autenticado --%>
+                <a
+                    href="<%= ctx %>/jsp-Usuarios/login.jsp?volver=<%= hdrVolverEnc %>"
+                    class="btn btn-fantasma">
+
+                    <ui:icono n="login" clase="sm:hidden"/>
+                    <span>Ingresar</span>
+                </a>
+
+                <a
+                    href="<%= ctx %>/jsp-Usuarios/registro.jsp"
+                    class="btn btn-primario hidden sm:inline-flex">
+                    Crear cuenta
+                </a>
+
+            <% } %>
+        </nav>
+    </div>
+
+    <%-- Buscador móvil --%>
+    <form
+        role="search"
+        action="<%= ctx %>/jsp-Interfaz/interfaz.jsp"
+        method="get"
+        class="contenedor pb-3 md:hidden">
+
+        <input type="hidden" name="tienda" value="<%= util.Html.esc(hdrTienda) %>">
+
+        <label for="buscar-movil" class="sr-only">Buscar productos</label>
+
+        <div class="entrada-icono">
+            <ui:icono n="search"/>
+
+            <input
+                id="buscar-movil"
+                type="search"
+                name="buscar"
+                value="<%= util.Html.esc(hdrBuscar) %>"
+                class="entrada h-11 rounded-full bg-stone-50"
+                placeholder="Buscar productos"
+                autocomplete="off"
+                enterkeyhint="search"
+                data-atajo-buscar>
+        </div>
+    </form>
+</header>

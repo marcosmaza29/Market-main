@@ -1,0 +1,13 @@
+        </main>
+    </div>
+</div>
+<dialog id="cajon-admin" class="cajon" aria-label="Menú del panel">
+    <div class="flex h-full flex-col">
+        <button type="button" class="btn btn-fantasma btn-solo-icono absolute top-3 right-3" data-cerrar-dialogo aria-label="Cerrar menú">
+            <ui:icono n="close"/>
+        </button>
+        <%@ include file="/WEB-INF/jspf/admin-nav.jspf" %>
+    </div>
+</dialog>
+<%@ include file="/WEB-INF/jspf/fin.jspf" %>
+</body>

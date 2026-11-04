@@ -1,0 +1,27 @@
+<%-- Campos del proveedor (alta y edición). Requiere: Map<String,String> pv, String pvError, String pvMsg --%>
+<%
+    String pvTipo = pv.get("tipo") == null ? "" : pv.get("tipo");
+%>
+<div class="grid gap-5 sm:grid-cols-2">
+    <ui:campo nombre="nombre" etiqueta="Razón social o nombre comercial" icono="domain" valor='<%= pv.get("nombre") %>' maxlength="100" clase="sm:col-span-2"
+              error='<%= "nombre".equals(pvError) ? pvMsg : null %>'/>
+    <ui:campo nombre="ruc" etiqueta="RUC" icono="badge" valor='<%= pv.get("ruc") %>' inputmode="numeric" maxlength="11" pattern="[0-9]{11}"
+              placeholder="20123456789" ayuda="11 dígitos." data-msg-formato="El RUC tiene 11 dígitos (sin espacios ni guiones)."
+              error='<%= "ruc".equals(pvError) ? pvMsg : null %>'/>
+    <div class="campo">
+        <label for="tipo" class="etiqueta">Tipo de productos</label>
+        <select id="tipo" name="tipo" class="entrada" required <%= "tipo".equals(pvError) ? "aria-invalid=\"true\"" : "" %>>
+            <option value="" disabled <%= pvTipo.isEmpty() ? "selected" : "" %>>Elige una opción</option>
+            <% for (String t : util.Catalogo.tiposProveedor((String) session.getAttribute("adminTiendaId"))) { %><option <%= t.equals(pvTipo) ? "selected" : "" %>><%= t %></option><% } %>
+        </select>
+    </div>
+    <ui:campo nombre="contacto" etiqueta="Persona de contacto" icono="person" valor='<%= pv.get("contacto") %>' maxlength="100" autocomplete="off"
+              error='<%= "contacto".equals(pvError) ? pvMsg : null %>'/>
+    <ui:campo nombre="telefono" etiqueta="Teléfono" tipo="tel" icono="call" valor='<%= pv.get("telefono") %>' opcional="true" maxlength="20"
+              pattern="[+0-9 ()\-]{6,20}" placeholder="+51 987 654 321" data-msg-formato="Usa solo números, espacios y +."
+              error='<%= "telefono".equals(pvError) ? pvMsg : null %>'/>
+    <div class="campo sm:col-span-2">
+        <label for="direccion" class="etiqueta">Dirección <span class="opcional">(opcional)</span></label>
+        <textarea id="direccion" name="direccion" class="entrada" rows="2" maxlength="300"><%= util.Html.esc(pv.get("direccion")) %></textarea>
+    </div>
+</div>

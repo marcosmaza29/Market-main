@@ -1,0 +1,9 @@
+apiVersion: 1
+providers:
+  - name: Market
+    orgId: 1
+    folder: Market
+    type: file
+    disableDeletion: true
+    options:
+      path: /var/lib/grafana/dashboards

@@ -1,0 +1,8 @@
+<%-- Requiere: String titulo --%>
+<meta charset="UTF-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#fafaf9">
+<title><%= util.Html.esc(titulo) %> · <%= util.Html.esc(request.getAttribute("tienda.nombre") != null ? request.getAttribute("tienda.nombre").toString() : util.Tienda.nombre(contextoTienda)) %></title>
+<link rel="stylesheet" href="<%= ctx %>/assets/app.css?v=<%= util.Catalogo.VERSION %>">
+<script src="<%= ctx %>/assets/app.js?v=<%= util.Catalogo.VERSION %>" defer></script>

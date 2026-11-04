@@ -1,0 +1,8 @@
+<%@ page pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
+<%@ taglib prefix="ui" tagdir="/WEB-INF/tags" %>
+<%
+    request.setCharacterEncoding("UTF-8");
+    String ctx = request.getContextPath();
+    String contextoTienda = util.Tienda.actual(request);
+    session.setAttribute("tiendaActual", contextoTienda);
+%>

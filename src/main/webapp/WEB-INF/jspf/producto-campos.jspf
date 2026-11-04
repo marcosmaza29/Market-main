@@ -1,0 +1,68 @@
+<%-- Campos del producto (alta y edición). Requiere: Map<String,String> pf, String pfError, String pfMsg --%>
+<%
+    String pfCategoria = pf.get("categoria") == null ? "" : pf.get("categoria");
+    String pfUnidad = pf.get("unidad") == null ? "" : pf.get("unidad");
+    String pfImagen = pf.get("imagen") == null ? "" : pf.get("imagen");
+%>
+<div class="grid gap-5 sm:grid-cols-2">
+    <ui:campo nombre="nombre" etiqueta="Nombre" valor='<%= pf.get("nombre") %>' maxlength="100" clase="sm:col-span-2"
+              placeholder='<%= "juguetes".equals(contextoTienda) ? "Ej.: Muñeco articulado o carro de carreras" : "cosmeticos".equals(contextoTienda) ? "Ej.: Labial hidratante" : "Ej.: Inca Kola 500 ml" %>' error='<%= "nombre".equals(pfError) ? pfMsg : null %>'/>
+
+    <div class="campo sm:col-span-2">
+        <label for="descripcion" class="etiqueta">Descripción <span class="opcional">(opcional)</span></label>
+        <textarea id="descripcion" name="descripcion" class="entrada" rows="2" maxlength="500" aria-describedby="descripcion-ayuda"
+                  placeholder="Marca, modelo, características y presentación del producto…"><%= util.Html.esc(pf.get("descripcion")) %></textarea>
+        <p id="descripcion-ayuda" class="ayuda">Se muestra en la tarjeta del producto (las dos primeras líneas).</p>
+    </div>
+
+    <ui:campo nombre="precio" etiqueta="Precio (S/)" tipo="number" icono="sell" valor='<%= pf.get("precio") %>'
+              min="0.10" step="0.01" inputmode="decimal" data-msg-minimo="El precio debe ser al menos S/ 0.10."
+              error='<%= "precio".equals(pfError) ? pfMsg : null %>'/>
+    <ui:campo nombre="stock" etiqueta="Stock disponible" tipo="number" icono="inventory_2" valor='<%= pf.get("stock") %>'
+              min="0" step="1" inputmode="numeric" ayuda="Unidades para vender. Con 0 se muestra como «Agotado»."
+              data-msg-minimo="El stock no puede ser negativo." error='<%= "stock".equals(pfError) ? pfMsg : null %>'/>
+
+    <ui:campo nombre="cantidad" etiqueta="Contenido" tipo="number" valor='<%= pf.get("cantidad") %>'
+              min="0.01" step="0.01" inputmode="decimal" ayuda="Cuánto trae: 1, 500, 1.5…" error='<%= "cantidad".equals(pfError) ? pfMsg : null %>'/>
+    <div class="campo">
+        <label for="unidad" class="etiqueta">Unidad de medida</label>
+        <select id="unidad" name="unidad" class="entrada" required <%= "unidad".equals(pfError) ? "aria-invalid=\"true\"" : "" %>>
+            <option value="" disabled <%= pfUnidad.isEmpty() ? "selected" : "" %>>Elige una unidad</option>
+            <% for (String u : util.Catalogo.UNIDADES) { %>
+            <option <%= u.equals(pfUnidad) ? "selected" : "" %>><%= u %></option>
+            <% } %>
+        </select>
+    </div>
+
+    <div class="campo sm:col-span-2">
+        <label for="categoria" class="etiqueta">Categoría</label>
+        <select id="categoria" name="categoria" class="entrada" required <%= "categoria".equals(pfError) ? "aria-invalid=\"true\"" : "" %>>
+            <option value="" disabled <%= pfCategoria.isEmpty() ? "selected" : "" %>>Elige una categoría</option>
+            <% String tiendaCampos = (String) session.getAttribute("adminTiendaId");
+               for (String c : util.Catalogo.categorias(tiendaCampos).keySet()) { %>
+            <option <%= c.equals(pfCategoria) ? "selected" : "" %>><%= c %></option>
+            <% } %>
+        </select>
+    </div>
+
+    <div class="grid gap-4 sm:col-span-2 sm:grid-cols-[minmax(0,1fr)_6rem] sm:items-start">
+        <ui:campo nombre="imagen" etiqueta="Imagen" icono="image" valor="<%= pfImagen %>" opcional="true" maxlength="255"
+                  placeholder="URL HTTPS o ruta de una imagen existente" spellcheck="false" autocapitalize="none"
+                  ayuda="Puedes conservar la imagen actual, escribir su enlace o subir una foto con el selector de abajo."
+                  data-vista-previa="vista-imagen" data-base="<%= util.Imagenes.base() %>"/>
+        <div class="grid size-24 place-items-center overflow-hidden rounded-lg bg-stone-100 ring-1 ring-stone-200" aria-live="polite">
+            <img id="vista-imagen" src="<%= util.Html.esc(util.Imagenes.url(pfImagen)) %>" alt="Vista previa de la imagen" class="size-full object-contain p-1.5 <%= pfImagen.isEmpty() ? "hidden" : "" %>">
+            <span data-sin-vista class="px-2 text-center text-[11px] leading-tight text-stone-500 <%= pfImagen.isEmpty() ? "" : "hidden" %>">Sin vista previa</span>
+        </div>
+    </div>
+<%
+ String fotoToken = (String) session.getAttribute("imagenProductoToken");
+ if (fotoToken == null) { fotoToken = java.util.UUID.randomUUID().toString(); session.setAttribute("imagenProductoToken", fotoToken); }
+%>
+<div class="campo sm:col-span-2">
+<label class="etiqueta" for="foto-producto">Subir foto desde mi equipo</label>
+<input id="foto-producto" type="file" accept="image/jpeg,image/png,image/gif" class="entrada" data-foto-producto
+ data-url="<%= ctx %>/producto-imagen" data-token="<%= fotoToken %>">
+<p class="ayuda" data-foto-estado role="status">JPG, PNG o GIF, máximo 5 MB. Puedes agregar la foto al crear o editar un producto.</p>
+</div>
+</div>

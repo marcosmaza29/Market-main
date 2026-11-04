@@ -1,0 +1,121 @@
+<%@ page import="java.sql.*, java.util.*, util.GestionAdmin, util.Html, util.Flash" %>
+<%
+ GestionAdmin modulo = GestionAdmin.modulo(moduloGestion);
+ String tiendaId = (String) session.getAttribute("adminTiendaId");
+ if (!Boolean.TRUE.equals(session.getAttribute("adminLogueado")) || !util.Tienda.valida(tiendaId)) { response.sendError(403); return; }
+ String titulo = modulo.titulo;
+ String seccion = modulo.seccion;
+ String urlGestion = ctx + "/jsp-Admin/" + modulo.pagina + "?tienda=" + tiendaId;
+ String gestionToken = (String) session.getAttribute("gestionToken");
+ if (gestionToken == null) { gestionToken = UUID.randomUUID().toString(); session.setAttribute("gestionToken", gestionToken); }
+ String gestionError = null;
+ String operacion = request.getParameter("operacion");
+ boolean enviado = "POST".equalsIgnoreCase(request.getMethod());
+ boolean conservar = enviado && ("crear".equals(operacion) || "actualizar".equals(operacion));
+ Map<String,String> formularioGestion = conservar ? modulo.leer(request) : new LinkedHashMap<String,String>();
+ Long editarGestion = null;
+ try {
+  String valorId = enviado ? ("crear".equals(operacion) ? null : request.getParameter("id")) : request.getParameter("editar");
+  if (valorId != null) { editarGestion = Long.valueOf(valorId); if(editarGestion <= 0) throw new NumberFormatException(); }
+ } catch (NumberFormatException e) { response.sendError(400); return; }
+ if (enviado) {
+  if (!gestionToken.equals(request.getParameter("token"))) { response.sendError(403); return; }
+  try {
+   if(!Arrays.asList("crear","actualizar","eliminar").contains(operacion)) throw new IllegalArgumentException("Operación no válida.");
+   if(!"crear".equals(operacion) && editarGestion==null) throw new IllegalArgumentException("Selecciona un registro válido.");
+   try(Connection con=util.Conexion.getConnection()) {
+    if("eliminar".equals(operacion)) modulo.eliminar(con,tiendaId,editarGestion);
+    else modulo.guardar(con,tiendaId,editarGestion,formularioGestion);
+   }
+   Flash.exito(session,"eliminar".equals(operacion)?"Registro eliminado.":"Registro guardado.");
+   response.sendRedirect(urlGestion); return;
+  } catch (IllegalArgumentException e) { gestionError=e.getMessage(); }
+  catch(Exception e) { log("Error al guardar " + modulo.tabla + " de " + tiendaId,e);gestionError="No se pudo guardar. Comprueba los datos y vuelve a intentar."; }
+ }
+ if(enviado && "eliminar".equals(operacion)) editarGestion=null;
+ String buscarGestion=Html.param(request,"buscar");
+ if(buscarGestion!=null && buscarGestion.length()>150)buscarGestion=buscarGestion.substring(0,150);
+ List<Map<String,String>> filasGestion=new ArrayList<>();
+ boolean cargaGestion=false;
+ try(Connection con=util.Conexion.getConnection()) {
+  if(editarGestion!=null && !conservar) {
+   Map<String,String> guardado=modulo.obtener(con,tiendaId,editarGestion);
+   if(guardado==null) { response.sendError(404); return; }
+   formularioGestion=guardado;
+  }
+  filasGestion=modulo.listar(con,tiendaId,buscarGestion);
+ } catch(Exception e) { log("Error al cargar "+modulo.tabla+" de "+tiendaId,e);cargaGestion=true; }
+%>
+<!DOCTYPE html>
+<html lang="es">
+<head><%@ include file="/WEB-INF/jspf/head.jspf" %></head>
+<%@ include file="/WEB-INF/jspf/admin-inicio.jspf" %>
+<div class="flex flex-wrap items-start justify-between gap-3">
+ <div><h1 class="text-2xl font-semibold"><%= Html.esc(titulo) %></h1>
+ <p class="mt-2 text-sm text-stone-600"><%= Html.esc(modulo.descripcion) %></p></div>
+ <span class="etiqueta"><%= Html.esc(util.Tienda.nombre(tiendaId)) %></span>
+</div>
+<% if(gestionError!=null) { %><div role="alert" class="aviso aviso-error mt-4"><%= Html.esc(gestionError) %></div><% } %>
+<% if(cargaGestion) { %>
+ <div role="alert" class="aviso aviso-error mt-4">No se pudieron cargar los registros. Comprueba la conexión y que la actualización de la base se haya completado.</div>
+<% } else { %>
+<section class="tarjeta mt-6 p-4 sm:p-6" aria-labelledby="gestion-form-titulo">
+<h2 id="gestion-form-titulo" class="text-lg font-semibold"><%= editarGestion==null ? "Nuevo registro" : "Editar registro" %></h2>
+<form method="post" action="<%= urlGestion %>" class="mt-4 grid gap-4 sm:grid-cols-2" data-validar>
+ <input type="hidden" name="token" value="<%= gestionToken %>">
+ <input type="hidden" name="operacion" value="<%= editarGestion==null?"crear":"actualizar" %>">
+ <% if(editarGestion!=null) { %><input type="hidden" name="id" value="<%= editarGestion %>"><% } %>
+ <% for(GestionAdmin.Campo campo:modulo.campos) { %>
+ <div class="campo <%= campo.multilinea ? "sm:col-span-2" : "" %>">
+  <label for="gestion-<%= campo.columna %>" class="etiqueta"><%= Html.esc(campo.etiqueta) %><%= campo.obligatorio?"":" (opcional)" %></label>
+  <% if(campo.multilinea) { %>
+   <textarea id="gestion-<%= campo.columna %>" name="<%= campo.columna %>" class="entrada" rows="3" maxlength="<%= campo.maximo %>" <%= campo.obligatorio?"required":"" %> aria-describedby="ayuda-<%= campo.columna %>"><%= Html.esc(formularioGestion.get(campo.columna)) %></textarea>
+  <% } else { %>
+   <input id="gestion-<%= campo.columna %>" name="<%= campo.columna %>" class="entrada" type="<%= campo.numero?"number":"text" %>" value="<%= Html.esc(formularioGestion.get(campo.columna)) %>" <%= campo.numero?"min=\""+campo.minimo+"\" max=\""+campo.maximo+"\" step=\"1\"":"maxlength=\""+campo.maximo+"\"" %> <%= campo.obligatorio?"required":"" %> aria-describedby="ayuda-<%= campo.columna %>">
+  <% } %>
+  <p class="ayuda" id="ayuda-<%= campo.columna %>"><%= Html.esc(campo.ayuda) %></p>
+ </div>
+ <% } %>
+ <div class="flex flex-wrap gap-3 sm:col-span-2">
+  <button class="btn btn-primario" type="submit"><%= editarGestion==null?"Crear registro":"Guardar cambios" %></button>
+  <% if(editarGestion!=null) { %><a class="btn btn-secundario" href="<%= urlGestion %>">Cancelar edición</a><% } %>
+ </div>
+</form>
+</section>
+<section class="mt-8" aria-labelledby="gestion-lista-titulo">
+ <h2 id="gestion-lista-titulo" class="text-lg font-semibold">Registros de esta tienda</h2>
+ <form method="get" action="<%= ctx %>/jsp-Admin/<%= modulo.pagina %>" class="mt-3 flex flex-wrap gap-2">
+  <input type="hidden" name="tienda" value="<%= tiendaId %>">
+  <label for="gestion-buscar" class="sr-only">Buscar registros</label>
+  <input class="entrada" style="max-width:28rem" type="search" id="gestion-buscar" name="buscar" maxlength="150" placeholder="Buscar en los campos del registro" value="<%= Html.esc(buscarGestion) %>">
+  <button class="btn btn-secundario" type="submit">Buscar</button>
+  <% if(buscarGestion!=null) { %><a class="btn btn-fantasma" href="<%= urlGestion %>">Limpiar</a><% } %>
+ </form>
+ <% if(filasGestion.isEmpty()) { %>
+  <p class="mt-4 text-stone-600"><%= buscarGestion==null?"Aún no hay registros. Crea el primero con el formulario.":"No hay registros que coincidan con la búsqueda." %></p>
+ <% } else { %>
+ <div class="tarjeta mt-4 overflow-x-auto" tabindex="0" role="region" aria-label="Tabla de registros, desplázate horizontalmente para ver todos los campos">
+ <table class="tabla">
+  <caption class="sr-only"><%= Html.esc(titulo) %> de <%= Html.esc(util.Tienda.nombre(tiendaId)) %></caption>
+  <thead><tr><% for(GestionAdmin.Campo campo:modulo.campos) { %><th scope="col"><%= Html.esc(campo.etiqueta) %></th><% } %><th scope="col">Acciones</th></tr></thead>
+  <tbody>
+  <% for(Map<String,String> fila:filasGestion) { %><tr>
+   <% for(GestionAdmin.Campo campo:modulo.campos) { %>
+   <td style="min-width:12rem;max-width:24rem;white-space:pre-wrap;overflow-wrap:anywhere"><%= Html.esc(fila.get(campo.columna)==null || fila.get(campo.columna).isEmpty()?"Pendiente":fila.get(campo.columna)) %></td>
+   <% } %>
+   <td><div class="flex flex-wrap gap-2">
+    <a class="btn btn-secundario btn-sm" href="<%= urlGestion %>&amp;editar=<%= fila.get("id") %>">Editar</a>
+    <form method="post" action="<%= urlGestion %>" data-confirmar="¿Eliminar este registro de la tienda?">
+     <input type="hidden" name="token" value="<%= gestionToken %>"><input type="hidden" name="operacion" value="eliminar"><input type="hidden" name="id" value="<%= fila.get("id") %>">
+     <button class="btn btn-fantasma btn-sm" type="submit">Eliminar</button>
+    </form>
+   </div></td>
+  </tr><% } %>
+  </tbody>
+ </table>
+ </div>
+ <% } %>
+</section>
+<% } %>
+<%@ include file="/WEB-INF/jspf/admin-fin.jspf" %>
+</html>

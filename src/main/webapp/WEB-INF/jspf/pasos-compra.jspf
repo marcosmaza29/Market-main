@@ -1,0 +1,16 @@
+<%-- Progreso de la compra. Requiere: int pasoActual (1 = carrito, 2 = confirmar, 3 = boleta) --%>
+<ol class="flex items-center gap-2 text-sm" aria-label="Progreso de la compra">
+    <% String[] pasos = {"Carrito", "Confirmar", "Boleta"};
+       for (int ip = 0; ip < pasos.length; ip++) {
+           int np = ip + 1;
+           boolean hecho = np < pasoActual, actual = np == pasoActual; %>
+    <li class="flex items-center gap-2" <%= actual ? "aria-current=\"step\"" : "" %>>
+        <span class="grid size-6 place-items-center rounded-full text-xs font-semibold transition-colors
+              <%= hecho ? "bg-green-700 text-white" : actual ? "bg-stone-900 text-white" : "bg-stone-200 text-stone-600" %>">
+            <% if (hecho) { %><ui:icono n="check" clase="size-4"/><span class="sr-only">Completado:</span><% } else { %><%= np %><% } %>
+        </span>
+        <span class="<%= actual ? "font-semibold text-stone-900" : "text-stone-600" %>"><%= pasos[ip] %></span>
+        <% if (np < pasos.length) { %><span class="h-px w-6 bg-stone-300 sm:w-10" aria-hidden="true"></span><% } %>
+    </li>
+    <% } %>
+</ol>

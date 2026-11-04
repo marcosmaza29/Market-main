@@ -1,0 +1,22 @@
+MARKET - ACTUALIZACION V3
+
+Incluye todos los arreglos de v2 y los cuatro módulos de administración para Market, Juguetería y Cosméticos:
+1. Catálogo de solicitudes con evidencia de cierre.
+2. Gestión de cambios.
+3. Pipeline de CI.
+4. Plan de capacidad.
+
+Todos tienen crear, editar, buscar y eliminar registros propios de cada tienda. Los campos de evidencia admiten texto y enlaces. Pipeline y capacidad son fichas administrativas para documentar la información, no ejecutores de CI ni un monitor en tiempo real.
+
+INSTALACION
+- Detener la versión anterior de la aplicación en Tomcat.
+- Instalar target/Market.war del paquete. Si la instalación se llamaba ROOT.war, utilizar ese mismo nombre para conservar localhost:8080/.
+- Mantener la configuración de conexión del cliente. Este paquete no contiene su .env ni credenciales.
+- Reiniciar Tomcat 9 con Java 17. El WAR aplica automáticamente las migraciones pendientes hasta la 07 si la conexión tiene permisos de modificación del esquema.
+- Como alternativa manual, ejecutar TODO el archivo ACTUALIZAR_BASE_MARKET_V3.sql en el SQL Editor de la base del proyecto con la cuenta propietaria, y después reiniciar la aplicación.
+- No ejecutar 01_schema.sql ni 02_data.sql sobre la base existente.
+- Recargar el navegador con Ctrl+F5 y abrir Administración de la tienda correspondiente.
+- Si se usa un IDE, importar los fuentes actualizados y hacer Clean/Build.
+
+Archivos SQL individuales en db/. Documentación en docs/MULTI_TIENDA_CONFIGURACION.md.
+Probado en una base local temporal. No se ha modificado el servidor ni la base remota del cliente.

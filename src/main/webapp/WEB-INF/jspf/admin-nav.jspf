@@ -1,0 +1,60 @@
+<%-- Navegación del panel (se incluye en la barra lateral y en el cajón móvil) --%>
+<div class="flex h-16 shrink-0 items-center gap-2.5 border-b border-stone-200 px-5">
+    <span class="grid size-8 place-items-center rounded-lg bg-marca-700 text-white">
+        <ui:icono n="storefront" clase="size-4"/>
+    </span>
+    <span class="leading-tight">
+        <span class="block text-sm font-semibold text-stone-900"><%= util.Html.esc(util.Tienda.nombre(contextoTienda)) %></span>
+        <span class="block text-xs text-stone-500">Panel de administración</span>
+    </span>
+</div>
+
+<nav class="nav-lateral flex-1 overflow-y-auto px-3 py-4" aria-label="Secciones del panel">
+    <% for (String[] it : admGrupos) {
+           if (it.length == 1) { %>
+        <p class="mt-4 mb-1 px-3 text-xs font-medium text-stone-500 first:mt-0">
+            <%= it[0] %>
+        </p>
+    <%     } else { %>
+        <a href="<%= ctx + it[1] + "?tienda=" + contextoTienda %>" <%= it[0].equals(seccion) ? "aria-current=\"page\"" : "" %>>
+            <ui:icono n="<%= it[2] %>"/>
+            <%= it[3] %>
+        </a>
+    <%     }
+       } %>
+</nav>
+
+<div class="nav-lateral shrink-0 space-y-0.5 border-t border-stone-200 px-3 py-3">
+    <a href="<%= ctx %>/jsp-Admin/editarAdmin.jsp?tienda=<%= contextoTienda %>"
+       <%= "cuenta".equals(seccion) ? "aria-current=\"page\"" : "" %>>
+        <ui:icono n="manage_accounts"/>
+        <span class="min-w-0 flex-1 truncate">
+            Mi cuenta
+            <% if (admUsuario != null) { %>
+                <span class="block truncate text-xs font-normal text-stone-500">
+                    <%= util.Html.esc(admUsuario) %>
+                </span>
+            <% } %>
+        </span>
+    </a>
+
+    <a href="<%= ctx %>/jsp-Admin/ayudaAdmin.jsp?tienda=<%= contextoTienda %>"
+       <%= "ayuda".equals(seccion) ? "aria-current=\"page\"" : "" %>>
+        <ui:icono n="help"/>Ayuda
+    </a>
+
+    <%-- Nuevo enlace para personalizar la tienda --%>
+    <a href="<%= ctx %>/jsp-Interfaz/configurar_tienda.jsp?tienda=<%= contextoTienda %>"
+       <%= "configurar_tienda".equals(seccion) ? "aria-current=\"page\"" : "" %>>
+        <ui:icono n="settings"/>Personalizar tienda
+    </a>
+
+    <a href="<%= ctx %>/jsp-Interfaz/interfaz.jsp?tienda=<%= contextoTienda %>" target="_blank" rel="noopener">
+        <ui:icono n="open_in_new"/>Ver tienda
+        <span class="sr-only"> (se abre en otra pestaña)</span>
+    </a>
+
+    <a href="<%= ctx %>/jsp-Admin/cerrarSesion.jsp">
+        <ui:icono n="logout"/>Cerrar sesión
+    </a>
+</div>

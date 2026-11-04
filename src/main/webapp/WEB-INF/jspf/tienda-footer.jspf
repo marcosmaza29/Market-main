@@ -1,0 +1,55 @@
+<%-- Pie de la tienda. Requiere haber incluido tienda-header.jspf (hdrNombre) --%>
+<footer class="mt-16 border-t border-stone-200 bg-white">
+    <div class="contenedor grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="space-y-3">
+            <p class="flex items-center gap-2 font-semibold text-stone-900">
+                <span class="grid size-8 place-items-center rounded-lg bg-marca-700 text-white"><ui:icono n="storefront" clase="size-4"/></span>
+                <%= hdrNombreTienda != null ? util.Html.esc(hdrNombreTienda) : ("juguetes".equals(hdrTienda) ? "Juguetería" : "cosmeticos".equals(hdrTienda) ? "Belleza y Cosméticos" : "Minimarket Anais") %>
+            </p>
+            <p class="text-sm leading-relaxed text-stone-600">Explora nuestro catálogo, encuentra tus productos favoritos y compra en línea de forma sencilla.</p>
+            <a href="<%= ctx %>/jsp-Interfaz/ubicacion.jsp" class="inline-flex items-center gap-1.5 text-sm font-medium text-marca-800 hover:underline">
+                <ui:icono n="location_on" clase="size-4"/>Cómo llegar a la tienda
+            </a>
+        </div>
+        <nav aria-labelledby="pie-comprar">
+            <h2 id="pie-comprar" class="text-sm font-semibold text-stone-900">Comprar</h2>
+            <ul class="mt-3 space-y-2 text-sm text-stone-600">
+                <li><a class="hover:text-stone-900 hover:underline" href="<%= ctx %>/jsp-Interfaz/interfaz.jsp?tienda=<%= hdrTiendaEnc %>">Todos los productos</a></li>
+                <% String pieTienda = request.getParameter("tienda");
+                   if (pieTienda == null || !java.util.Arrays.asList("market", "juguetes", "cosmeticos").contains(pieTienda)) pieTienda = "market";
+                   int pieN = 0; for (String pieCat : util.Catalogo.categorias(pieTienda).keySet()) { if (pieN++ == 4) break; %>
+                <li><a class="hover:text-stone-900 hover:underline" href="<%= ctx %>/jsp-Interfaz/interfaz.jsp?tienda=<%= hdrTiendaEnc %>&categoria=<%= java.net.URLEncoder.encode(pieCat, "UTF-8") %>"><%= pieCat %></a></li>
+                <% } %>
+            </ul>
+        </nav>
+        <nav aria-labelledby="pie-ayuda">
+            <h2 id="pie-ayuda" class="text-sm font-semibold text-stone-900">Ayuda</h2>
+            <ul class="mt-3 space-y-2 text-sm text-stone-600">
+                <li><a class="hover:text-stone-900 hover:underline" href="<%= ctx %>/jsp-Interfaz/ayuda.jsp#como-comprar">Cómo comprar</a></li>
+                <li><a class="hover:text-stone-900 hover:underline" href="<%= ctx %>/jsp-Interfaz/ayuda.jsp#boleta">Tu boleta</a></li>
+                <li><a class="hover:text-stone-900 hover:underline" href="<%= ctx %>/jsp-Interfaz/ayuda.jsp#cuenta">Cuenta y contraseña</a></li>
+                <li><a class="hover:text-stone-900 hover:underline" href="<%= ctx %>/jsp-Interfaz/ubicacion.jsp">Ubicación</a></li>
+                <li><a class="hover:text-stone-900 hover:underline" href="<%= ctx %>/jsp-Interfaz/solicitudes.jsp?tienda=<%= hdrTiendaEnc %>">Solicitudes y mejoras</a></li>
+            </ul>
+        </nav>
+        <nav aria-labelledby="pie-cuenta">
+            <h2 id="pie-cuenta" class="text-sm font-semibold text-stone-900">Tu cuenta</h2>
+            <ul class="mt-3 space-y-2 text-sm text-stone-600">
+                <% if (hdrNombre != null) { %>
+                <li><a class="hover:text-stone-900 hover:underline" href="<%= ctx %>/jsp-Interfaz/historial.jsp">Mis compras</a></li>
+                <li><a class="hover:text-stone-900 hover:underline" href="<%= ctx %>/jsp-Usuarios/editarUsuario.jsp">Mi cuenta</a></li>
+                <% } else { %>
+                <li><a class="hover:text-stone-900 hover:underline" href="<%= ctx %>/jsp-Usuarios/login.jsp">Iniciar sesión</a></li>
+                <li><a class="hover:text-stone-900 hover:underline" href="<%= ctx %>/jsp-Usuarios/registro.jsp">Crear cuenta</a></li>
+                <% } %>
+                <li><a class="hover:text-stone-900 hover:underline" href="<%= ctx %>/jsp-Interfaz/carrito.jsp">Carrito</a></li>
+            </ul>
+        </nav>
+    </div>
+    <div class="border-t border-stone-200">
+        <div class="contenedor flex flex-col gap-2 py-4 text-xs text-stone-500 sm:flex-row sm:items-center sm:justify-between">
+            <p>&copy; <%= java.util.Calendar.getInstance().get(java.util.Calendar.YEAR) %> <%= util.Html.esc(hdrNombreTienda != null ? hdrNombreTienda : util.Tienda.nombre(hdrTienda)) %>. Precios en soles (S/).</p>
+            <a href="<%= ctx %>/jsp-Admin/loginAdmin.jsp?tienda=<%= hdrTiendaEnc %>" class="hover:text-stone-800 hover:underline">Acceso para administradores</a>
+        </div>
+    </div>
+</footer>

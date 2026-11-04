@@ -1,0 +1,15 @@
+ACTUALIZACION V2 - REPORTE DEL CLIENTE
+
+1. Detener la versión anterior en Tomcat.
+2. Sustituir el WAR por target/Market.war de este paquete y arrancar Tomcat 9.
+   Si la aplicación anterior se llamaba ROOT.war, instalar este WAR como ROOT.war para conservar la dirección localhost:8080/.
+   Conservar las variables de conexión de la instalación del cliente (.env/servidor). El paquete no incluye credenciales.
+3. El arranque aplica las actualizaciones de la base automáticamente. No cargar 01_schema.sql ni 02_data.sql sobre los datos existentes.
+   Si el usuario de base no tiene permiso para modificar tablas, ejecutar db/04_multi_tienda.sql, db/05_carrusel.sql y db/06_imagenes_producto.sql con la cuenta propietaria y reiniciar Tomcat.
+4. Recargar el navegador con Ctrl+F5. Entrar a la tienda correspondiente y luego a Administración.
+5. En Productos, elegir "Subir foto desde mi equipo", esperar el aviso de foto subida y guardar el producto. También funciona al editar.
+6. En Carrusel de publicidad, subir las fotos de cada negocio.
+
+Incluye corrección de Mis compras, actualización de tablas faltantes, ejemplos por negocio y categorías adicionales de juguetería. El nuevo paquete fue probado localmente. No se aplicó a la base o servidor del cliente.
+
+Fuentes completos y WAR compilado incluidos. Si se ejecuta desde un IDE, importar estos fuentes y hacer Clean/Build para no ejecutar el código de la versión anterior.
