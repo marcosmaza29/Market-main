@@ -17,6 +17,9 @@ RUN mvn -q -B package -DskipTests
 
 # --- Runtime (Tomcat 9, javax.servlet) ---
 FROM tomcat:9.0-jdk17-temurin-noble
+# Desactivar el puerto de apagado de Tomcat
+RUN sed -i 's/port="8005"/port="-1"/' \
+    /usr/local/tomcat/conf/server.xml
 RUN rm -rf /usr/local/tomcat/webapps/*
 COPY --from=build /app/target/Market.war /usr/local/tomcat/webapps/ROOT.war
 ENV PORT=8080
