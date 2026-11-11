@@ -13,6 +13,7 @@
         {"clientes", "/jsp-Admin/solicitudesClientes.jsp", "mail", "Solicitudes del cliente"},
 
         {"Gestión del servicio"},
+        {"incidentes", "/jsp-Admin/incidentes.jsp", "report_problem", "Gestor de incidentes"},
         {"cambios", "/jsp-Admin/gestionCambios.jsp", "settings", "Gestión de cambios"},
         {"pipeline", "/jsp-Admin/pipelineCI.jsp", "play_arrow", "Pipeline de CI"},
         {"capacidad", "/jsp-Admin/planCapacidad.jsp", "monitoring", "Plan de capacidad"},

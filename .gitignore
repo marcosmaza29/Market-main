@@ -16,3 +16,11 @@ node_modules/
 *.log
 .vscode/
 .idea/
+
+# Seguridad CI/CD
+**/.env
+**/.env.*
+!.env.example
+**/node_modules/
+**/target/
+*.war

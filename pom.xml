@@ -51,6 +51,13 @@
             <version>5.5.13.3</version>
         </dependency>
 
+        <!-- Pruebas unitarias con JUnit 5 -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.11.4</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -59,7 +66,7 @@
 
         <resources>
             <resource><directory>src/main/resources</directory></resource>
-            <resource><directory>db</directory><targetPath>db</targetPath><includes><include>04_multi_tienda.sql</include><include>05_carrusel.sql</include><include>06_imagenes_producto.sql</include><include>07_gestion_administrativa.sql</include><include>08_solicitudes_clientes.sql</include></includes></resource>
+            <resource><directory>db</directory><targetPath>db</targetPath><includes><include>04_multi_tienda.sql</include><include>05_carrusel.sql</include><include>06_imagenes_producto.sql</include><include>07_gestion_administrativa.sql</include><include>08_solicitudes_clientes.sql</include><include>09_incidentes.sql</include></includes></resource>
         </resources>
 
         <plugins>
@@ -88,6 +95,11 @@
                 </configuration>
             </plugin>
 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.2</version>
+            </plugin>
         </plugins>
 
     </build>
