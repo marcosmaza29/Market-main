@@ -1,0 +1,107 @@
+name: Market | Respaldo automatico de codigo y Supabase
+
+on:
+  schedule:
+    # Todos los dias a las 02:17 hora de Peru (UTC-5)
+    - cron: '17 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: market-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Copia cifrada del codigo y BD
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PGHOST: ${{ secrets.BACKUP_PGHOST }}
+      PGUSER: ${{ secrets.BACKUP_PGUSER }}
+      PGPASSWORD: ${{ secrets.BACKUP_PGPASSWORD }}
+      PGDATABASE: postgres
+      PGPORT: '5432'
+      PGSSLMODE: require
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      RCLONE_CONFIG_B64: ${{ secrets.RCLONE_CONFIG_B64 }}
+
+    steps:
+      - name: Descargar historial Git completo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Comprobar secretos
+        shell: bash
+        run: |
+          set -euo pipefail
+          for key in PGHOST PGUSER PGPASSWORD BACKUP_PASSPHRASE RCLONE_CONFIG_B64; do
+            if [[ -z "${!key:-}" ]]; then
+              echo "::error::Falta configurar el secreto $key"
+              exit 1
+            fi
+          done
+
+      - name: Exportar PostgreSQL 17 y respaldar repositorio
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/market-backup"
+          git bundle create "$RUNNER_TEMP/market-backup/Market-main.bundle" --all
+          git bundle verify "$RUNNER_TEMP/market-backup/Market-main.bundle"
+          docker run --rm \
+            -e PGHOST -e PGUSER -e PGPASSWORD -e PGDATABASE -e PGPORT -e PGSSLMODE \
+            -v "$RUNNER_TEMP/market-backup:/backup" \
+            postgres:17 \
+            pg_dump --format=custom --no-owner --no-acl \
+              --schema=public --file=/backup/market-public.dump
+          docker run --rm \
+            -v "$RUNNER_TEMP/market-backup:/backup:ro" \
+            postgres:17 \
+            pg_restore --list /backup/market-public.dump > /dev/null
+          test -s "$RUNNER_TEMP/market-backup/market-public.dump"
+
+      - name: Comprimir y cifrar
+        shell: bash
+        run: |
+          set -euo pipefail
+          stamp="$(date -u +%Y-%m-%d_%H-%M-%S)"
+          archive="market-backup-$stamp.tar.gz.gpg"
+          mkdir -p encrypted
+          tar -C "$RUNNER_TEMP/market-backup" -czf "$RUNNER_TEMP/market-backup.tar.gz" \
+            Market-main.bundle market-public.dump
+          printf '%s' "$BACKUP_PASSPHRASE" | \
+            gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+              --symmetric --cipher-algo AES256 \
+              --output "encrypted/$archive" "$RUNNER_TEMP/market-backup.tar.gz"
+          (cd encrypted && sha256sum "$archive" > SHA256SUMS)
+
+      - name: Guardar copia cifrada temporal en GitHub Actions
+        uses: actions/upload-artifact@v4
+        with:
+          name: market-backup-${{ github.run_number }}
+          path: encrypted/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Instalar rclone
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq rclone
+
+      - name: Enviar copia cifrada a Google Drive
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          config="$RUNNER_TEMP/rclone.conf"
+          printf '%s' "$RCLONE_CONFIG_B64" | base64 --decode > "$config"
+          remote_path="marketdrive:RespaldosMarket/$(date -u +%Y-%m-%d)/${{ github.run_number }}"
+          rclone --config "$config" copy encrypted/ "$remote_path" \
+            --checkers 4 --transfers 2
+          rclone --config "$config" check encrypted/ "$remote_path" --one-way
