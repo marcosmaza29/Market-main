@@ -16,11 +16,31 @@
             response.sendRedirect(ctx + "/jsp-Interfaz/carrito.jsp");
             return;
         }
+        // La tienda de esta compra procede del carrito, no del usuario ni de la
+        // tienda que visite después. Así se conserva la separación multitienda.
+        String tiendaCompra = (String) session.getAttribute("carritoTienda");
+        if (!util.Tienda.valida(tiendaCompra)) {
+            Flash.error(session, "No se pudo identificar la tienda de esta compra. Vuelve al carrito.");
+            response.sendRedirect(ctx + "/jsp-Interfaz/carrito.jsp");
+            return;
+        }
+        String nombreTiendaCompra = util.Tienda.nombre(tiendaCompra);
         String problema = null;
         double total = 0;
         Connection conn = null;
         try {
             conn = util.Conexion.getConnection();
+            // Guardar el nombre vigente de la tienda junto con la compra.
+            try (PreparedStatement psTienda = conn.prepareStatement(
+                    "SELECT nombre FROM tiendas WHERE id = ?")) {
+                psTienda.setString(1, tiendaCompra);
+                try (ResultSet rsTienda = psTienda.executeQuery()) {
+                    if (rsTienda.next() && rsTienda.getString("nombre") != null
+                            && !rsTienda.getString("nombre").trim().isEmpty()) {
+                        nombreTiendaCompra = rsTienda.getString("nombre").trim();
+                    }
+                }
+            }
             conn.setAutoCommit(false);
             // Descuento atómico: solo se actualiza si todavía hay stock suficiente
             try (PreparedStatement ps = conn.prepareStatement("UPDATE productos SET stock = stock - ? WHERE id = ? AND stock >= ? AND tienda_id = ?")) {
@@ -28,7 +48,7 @@
                     ps.setInt(1, item.getCantidad());
                     ps.setInt(2, item.getId());
                     ps.setInt(3, item.getCantidad());
-                    ps.setString(4, (String) session.getAttribute("tiendaId"));
+                    ps.setString(4, tiendaCompra);
                     if (ps.executeUpdate() == 0) {
                         problema = "Ya no hay suficiente stock de «" + item.getNombre() + "». Ajusta la cantidad e inténtalo otra vez.";
                         break;
@@ -48,7 +68,7 @@
                         ps.setDouble(6, item.getSubtotal());
                         if (usuarioId != null) ps.setInt(7, usuarioId); else ps.setNull(7, Types.INTEGER);
                         ps.setInt(8, item.getId());
-                        ps.setString(9, (String) session.getAttribute("tiendaId"));
+                        ps.setString(9, tiendaCompra);
                         ps.executeUpdate();
                         total += item.getSubtotal();
                     }
@@ -74,6 +94,8 @@
         compra.put("items", new ArrayList<>(carrito));
         compra.put("total", total);
         compra.put("fecha", new java.util.Date());
+        compra.put("tiendaId", tiendaCompra);
+        compra.put("tiendaNombre", nombreTiendaCompra);
         session.setAttribute("ultima_compra", compra);
         session.setAttribute("carrito_final", new ArrayList<>(carrito)); // usado por /generar-boleta
         session.removeAttribute("carrito");
@@ -89,6 +111,10 @@
     }
     List<CarritoItem> items = (List<CarritoItem>) compra.get("items");
     double total = (Double) compra.get("total");
+    String tiendaBoletaNombre = (String) compra.get("tiendaNombre");
+    if (tiendaBoletaNombre == null || tiendaBoletaNombre.trim().isEmpty()) {
+        tiendaBoletaNombre = util.Tienda.nombre((String) compra.get("tiendaId"));
+    }
     java.util.Date fecha = (java.util.Date) compra.get("fecha");
     String titulo = "Compra realizada";
     int pasoActual = 3;
@@ -108,6 +134,7 @@
                 <ui:icono n="check_circle" clase="size-8"/>
             </span>
             <h1 id="titulo-compra" class="mt-4 text-2xl font-semibold tracking-tight text-stone-900">¡Compra realizada!</h1>
+            <p class="mt-1 text-sm font-medium text-stone-700">Tienda: <%= Html.esc(tiendaBoletaNombre) %></p>
             <p class="mt-1 text-sm text-stone-600">Registramos tu compra el <%= Html.fechaLarga(fecha) %> a las <%= Html.hora(fecha) %>.</p>
         </div>
 

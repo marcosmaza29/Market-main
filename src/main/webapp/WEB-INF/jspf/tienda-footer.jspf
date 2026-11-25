@@ -7,9 +7,7 @@
                 <%= hdrNombreTienda != null ? util.Html.esc(hdrNombreTienda) : ("juguetes".equals(hdrTienda) ? "Juguetería" : "cosmeticos".equals(hdrTienda) ? "Belleza y Cosméticos" : "Minimarket Anais") %>
             </p>
             <p class="text-sm leading-relaxed text-stone-600">Explora nuestro catálogo, encuentra tus productos favoritos y compra en línea de forma sencilla.</p>
-            <a href="<%= ctx %>/jsp-Interfaz/ubicacion.jsp" class="inline-flex items-center gap-1.5 text-sm font-medium text-marca-800 hover:underline">
-                <ui:icono n="location_on" clase="size-4"/>Cómo llegar a la tienda
-            </a>
+
         </div>
         <nav aria-labelledby="pie-comprar">
             <h2 id="pie-comprar" class="text-sm font-semibold text-stone-900">Comprar</h2>
@@ -28,7 +26,7 @@
                 <li><a class="hover:text-stone-900 hover:underline" href="<%= ctx %>/jsp-Interfaz/ayuda.jsp#como-comprar">Cómo comprar</a></li>
                 <li><a class="hover:text-stone-900 hover:underline" href="<%= ctx %>/jsp-Interfaz/ayuda.jsp#boleta">Tu boleta</a></li>
                 <li><a class="hover:text-stone-900 hover:underline" href="<%= ctx %>/jsp-Interfaz/ayuda.jsp#cuenta">Cuenta y contraseña</a></li>
-                <li><a class="hover:text-stone-900 hover:underline" href="<%= ctx %>/jsp-Interfaz/ubicacion.jsp">Ubicación</a></li>
+
                 <li><a class="hover:text-stone-900 hover:underline" href="<%= ctx %>/jsp-Interfaz/solicitudes.jsp?tienda=<%= hdrTiendaEnc %>">Solicitudes y mejoras</a></li>
             </ul>
         </nav>

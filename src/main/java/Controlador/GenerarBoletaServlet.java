@@ -26,6 +26,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import modelo.CarritoItem;
+import util.Tienda;
+import java.util.Map;
+import java.util.Locale;
 
 @WebServlet("/generar-boleta")
 public class GenerarBoletaServlet extends HttpServlet {
@@ -47,11 +50,36 @@ public class GenerarBoletaServlet extends HttpServlet {
             return;
         }
 
+        // Obtener la tienda de la compra FINALIZADA, no de la navegación actual.
+        // Se guarda al registrar la compra para evitar boletas con otra tienda.
+        Map<String, Object> compra =
+                (Map<String, Object>) sesion.getAttribute("ultima_compra");
+        if (compra == null) {
+            response.sendRedirect(request.getContextPath() + "/jsp-Interfaz/carrito.jsp");
+            return;
+        }
+        String tiendaId = (String) compra.get("tiendaId");
+        if (!Tienda.valida(tiendaId)) {
+            response.sendError(HttpServletResponse.SC_CONFLICT,
+                    "La compra no tiene una tienda válida. Realiza una nueva compra.");
+            return;
+        }
+        String tiendaNombre = (String) compra.get("tiendaNombre");
+        if (tiendaNombre == null || tiendaNombre.trim().isEmpty()) {
+            tiendaNombre = Tienda.nombre(tiendaId);
+        }
+        BaseColor colorTienda = "juguetes".equals(tiendaId)
+                ? new BaseColor(41, 98, 186)
+                : "cosmeticos".equals(tiendaId)
+                    ? new BaseColor(143, 69, 145)
+                    : new BaseColor(245, 124, 0);
+
         // ============================
         // FECHA Y NÚMERO DE BOLETA
         // ============================
 
-        Date fechaActual = new Date();
+        Date fechaActual = (Date) compra.get("fecha");
+        if (fechaActual == null) fechaActual = new Date();
 
         String fechaArchivo =
                 new SimpleDateFormat("yyyyMMdd_HHmmss").format(fechaActual);
@@ -66,7 +94,7 @@ public class GenerarBoletaServlet extends HttpServlet {
                 usuarioNombre != null ? usuarioNombre : "Cliente";
 
         String nombreArchivo =
-                "Boleta_" +
+                "Boleta_" + tiendaId + "_" +
                 nombreCliente.replaceAll("[^a-zA-Z0-9]", "_") +
                 "_" +
                 fechaArchivo +
@@ -156,7 +184,7 @@ public class GenerarBoletaServlet extends HttpServlet {
             empresa.setBorder(Rectangle.NO_BORDER);
 
             Paragraph nombreEmpresa =
-                    new Paragraph("MINIMARKET", titulo);
+                    new Paragraph(tiendaNombre, titulo);
 
             nombreEmpresa.setSpacingAfter(5);
 
@@ -164,21 +192,21 @@ public class GenerarBoletaServlet extends HttpServlet {
 
             empresa.addElement(
                     new Paragraph(
-                            "Minimarket",
+                            "Tienda: " + tiendaNombre,
                             subtitulo
                     )
             );
 
             empresa.addElement(
                     new Paragraph(
-                            "RUC: 00000000001",
+                            "Comprobante interno de compra",
                             subtitulo
                     )
             );
 
             empresa.addElement(
                     new Paragraph(
-                            "Comprobante de venta",
+                            "No válido como comprobante tributario",
                             subtitulo
                     )
             );
@@ -251,7 +279,7 @@ public class GenerarBoletaServlet extends HttpServlet {
 
             tituloCliente.setColspan(2);
             tituloCliente.setBackgroundColor(
-                    new BaseColor(245, 124, 0)
+                    colorTienda
             );
             tituloCliente.setPadding(6);
 
@@ -339,7 +367,7 @@ public class GenerarBoletaServlet extends HttpServlet {
                         );
 
                 celda.setBackgroundColor(
-                        new BaseColor(55, 55, 55)
+                        colorTienda
                 );
 
                 celda.setHorizontalAlignment(
@@ -385,7 +413,7 @@ public class GenerarBoletaServlet extends HttpServlet {
                                 new Phrase(
                                         "S/ " +
                                         String.format(
-                                                "%.2f",
+                                                Locale.forLanguageTag("es-PE"), "%.2f",
                                                 item.getPrecio()
                                         ),
                                         normal
@@ -439,7 +467,7 @@ public class GenerarBoletaServlet extends HttpServlet {
                                 new Phrase(
                                         "S/ " +
                                         String.format(
-                                                "%.2f",
+                                                Locale.forLanguageTag("es-PE"), "%.2f",
                                                 subtotal
                                         ),
                                         normal
@@ -511,7 +539,7 @@ public class GenerarBoletaServlet extends HttpServlet {
                     );
 
             valorTotal.setBackgroundColor(
-                    new BaseColor(255, 183, 77)
+                    new BaseColor(240, 240, 240)
             );
 
             valorTotal.setHorizontalAlignment(
@@ -550,7 +578,7 @@ public class GenerarBoletaServlet extends HttpServlet {
 
             Paragraph mensaje =
                     new Paragraph(
-                            "MINIMARKET  - Gracias por confiar en nosotros.",
+                            tiendaNombre + " - Gracias por confiar en nosotros.",
                             pie
                     );
 
