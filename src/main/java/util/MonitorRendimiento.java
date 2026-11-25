@@ -42,27 +42,44 @@ public final class MonitorRendimiento {
         e.activos.decrementAndGet();
         e.registrar(System.currentTimeMillis(), Math.max(0, duracionMs), error);
     }
-    public static String json(String tienda) {
+    /** Instantanea consultable: recursos compartidos y contadores por tienda desde el arranque. */
+    public static final class Instantanea {
+        public final String tienda;
+        public final long fecha, inicio, solicitudes, errores, activos, ultimos5min, promedioMs;
+        public final long heapUsado, heapMaximo, discoTotal, discoUsado;
+        public final double cpuProceso;
+        private Instantanea(String tienda, long fecha, long solicitudes, long errores,
+                long activos, long ultimos5min, long promedioMs, long heapUsado,
+                long heapMaximo, double cpuProceso, long discoTotal, long discoUsado) {
+            this.tienda=tienda; this.fecha=fecha; this.inicio=INICIO;
+            this.solicitudes=solicitudes; this.errores=errores; this.activos=activos;
+            this.ultimos5min=ultimos5min; this.promedioMs=promedioMs;
+            this.heapUsado=heapUsado; this.heapMaximo=heapMaximo;
+            this.cpuProceso=cpuProceso; this.discoTotal=discoTotal; this.discoUsado=discoUsado;
+        }
+    }
+    public static Instantanea instantanea(String tienda) {
+        if (!Tienda.valida(tienda)) throw new IllegalArgumentException("Tienda no valida");
         Estadisticas e = obtener(tienda);
         Runtime r = Runtime.getRuntime();
-        MemoryMXBean mem = ManagementFactory.getMemoryMXBean();
-        MemoryUsage heap = mem.getHeapMemoryUsage();
+        MemoryUsage heap = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
         long limite = heap.getMax() > 0 ? heap.getMax() : r.maxMemory();
         File disco = new File(System.getProperty("catalina.base", "/"));
         long espacio = disco.getTotalSpace(), libre = disco.getUsableSpace();
-        double cpu = cpuProceso();
         long total = e.total.sum();
-        return "{\"tienda\":\"" + tienda + "\",\"timestamp\":" + System.currentTimeMillis()
-            + ",\"inicio\":" + INICIO + ",\"solicitudes\":" + total
-            + ",\"errores\":" + e.errores.sum()
-            + ",\"activos\":" + e.activos.get()
-            + ",\"ultimos5min\":" + e.ultimosMinutos(5)
-            + ",\"promedioMs\":" + (total == 0 ? 0 : e.latenciaMs.sum() / total)
-            + ",\"heapUsado\":" + heap.getUsed()
-            + ",\"heapMaximo\":" + limite
-            + ",\"cpuProceso\":" + cpu
-            + ",\"discoTotal\":" + espacio
-            + ",\"discoUsado\":" + Math.max(0, espacio - libre) + "}";
+        return new Instantanea(tienda, System.currentTimeMillis(), total, e.errores.sum(),
+                e.activos.get(), e.ultimosMinutos(5), total == 0 ? 0 : e.latenciaMs.sum() / total,
+                heap.getUsed(), limite, cpuProceso(), espacio, Math.max(0, espacio-libre));
+    }
+    public static String json(String tienda) {
+        Instantanea d = instantanea(tienda);
+        return "{\"tienda\":\"" + d.tienda + "\",\"timestamp\":" + d.fecha
+            + ",\"inicio\":" + d.inicio + ",\"solicitudes\":" + d.solicitudes
+            + ",\"errores\":" + d.errores + ",\"activos\":" + d.activos
+            + ",\"ultimos5min\":" + d.ultimos5min + ",\"promedioMs\":" + d.promedioMs
+            + ",\"heapUsado\":" + d.heapUsado + ",\"heapMaximo\":" + d.heapMaximo
+            + ",\"cpuProceso\":" + d.cpuProceso + ",\"discoTotal\":" + d.discoTotal
+            + ",\"discoUsado\":" + d.discoUsado + "}";
     }
     
 private static double cpuProceso() {

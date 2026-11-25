@@ -8,7 +8,7 @@ import javax.servlet.http.*;
 import util.MonitorRendimiento;
 import util.Tienda;
 
-@WebServlet(urlPatterns={"/monitor/estado", "/monitor/metrics"})
+@WebServlet(urlPatterns={"/monitor/estado", "/monitor/metrics", "/monitor/informe"})
 public class MonitorServlet extends HttpServlet {
     @Override protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setHeader("Cache-Control", "no-store");
@@ -27,6 +27,12 @@ public class MonitorServlet extends HttpServlet {
         String tienda = sesion == null ? null : (String)sesion.getAttribute("adminTiendaId");
         if (sesion == null || !Boolean.TRUE.equals(sesion.getAttribute("adminLogueado")) || !Tienda.valida(tienda)
                 || !tienda.equals(request.getParameter("tienda"))) { response.sendError(403); return; }
+        if (request.getServletPath().endsWith("/informe")) {
+            response.setContentType("application/pdf");
+            response.setHeader("Content-Disposition", "attachment; filename=Informe_rendimiento_" + tienda + ".pdf");
+            util.ReporteRendimiento.generar(MonitorRendimiento.instantanea(tienda), response.getOutputStream());
+            return;
+        }
         response.setContentType("application/json; charset=UTF-8");
         response.getWriter().write(MonitorRendimiento.json(tienda));
     }
